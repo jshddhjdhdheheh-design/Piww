@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title></title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: #0a1a2a;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  /* ========================================= */
+  /* BAGIAN BACKGROUND VIDEO                   */
+  /* ========================================= */
+  .bg-video {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    object-fit: cover; /* Agar video menutupi seluruh layar tanpa gepeng */
+    pointer-events: none; /* Agar video tidak bisa di-klik/di-pause sembarangan */
+  }
+
+  /* Overlay gradasi agar kartu PIN tetap terbaca jelas di atas video */
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(
+      to bottom,
+      rgba(255, 180, 50, 0.15) 0%,
+      rgba(180, 80, 120, 0.15) 35%,
+      rgba(60, 40, 90, 0.35) 70%,
+      rgba(20, 30, 50, 0.65) 100%
+    );
+  }
+
+  .bubbles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+  }
+  .bubble {
+    position: absolute;
+    bottom: -80px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.08);
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    10% { opacity: 0.7; }
+    90% { opacity: 0.5; }
+    100% { transform: translateY(-110vh) scale(1.1); opacity: 0; }
+  }
+
+  .card {
+    position: relative;
+    z-index: 10;
+    width: 92%;
+    max-width: 360px;
+    background: linear-gradient(145deg, #ff6b9d, #ff4d7a, #ff2e63);
+    border-radius: 24px;
+    border: 2px solid rgba(255,255,255,0.35);
+    box-shadow: 0 15px 40px rgba(255, 45, 100, 0.45);
+    padding: 22px 20px 26px;
+    color: #fff;
+    text-align: center;
+  }
+
+  #pinScreen h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  #pinScreen .sub {
+    font-size: 0.85rem;
+    opacity: 0.95;
+    margin-bottom: 18px;
+  }
+  .dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.85);
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .dot.filled {
+    background: #fff;
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255,255,255,0.8);
+  }
+  .msg {
+    font-size: 0.9rem;
+    min-height: 42px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .msg.error { color: #fff0f5; }
+  .msg.success { color: #e8ffe8; font-weight: 600; }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 260px;
+    margin: 0 auto;
+  }
+  .key {
+    height: 52px;
+    border-radius: 50px;
+    border: none;
+    background: rgba(255,255,255,0.25);
+    color: white;
+    font-size: 1.35rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: transform 0.1s, background 0.2s;
+  }
+  .key:active {
+    transform: scale(0.94);
+    background: rgba(255,255,255,0.4);
+  }
+  .key.zero { grid-column: 2; }
+  .key.del {
+    background: rgba(0,0,0,0.25);
+    font-size: 1.1rem;
+  }
+
+  #chatScreen { display: none; }
+  .avatar-wrap {
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 4px rgba(255,255,255,0.4);
+    overflow: hidden;
+  }
+  .envelope {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    font-size: 1.3rem;
+  }
+
+  .chat-text {
+    font-size: 0.98rem;
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+  .chat-text.big {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .countdown {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 1.15rem;
+    font-weight: 600;
+  }
+  .countdown span {
+    background: rgba(255,255,255,0.25);
+    padding: 3px 12px;
+    border-radius: 8px;
+  }
+
+  .btn-coba {
+    display: none;
+    margin: 20px auto 0;
+    padding: 13px 32px;
+    background: linear-gradient(180deg, #ff8fb8, #ff4d7a);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 50px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    box-shadow: 0 6px 18px rgba(255, 45, 100, 0.4);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .btn-coba:active {
+    transform: scale(0.96);
+  }
+
+  #loveOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 10, 30, 0.88);
+    z-index: 50;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+  #loveOverlay .love-text {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 0 20px #ff4d6d, 0 0 40px #ff4d6d;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .hearts {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .heart {
+    position: absolute;
+    font-size: 22px;
+    animation: floatHeart 4.5s linear forwards;
+    opacity: 0.9;
+  }
+  @keyframes floatHeart {
+    0% { transform: translateY(100vh) scale(0.6); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+  }
+
+  .pantun {
+    font-size: 0.92rem;
+    line-height: 1.65;
+    margin-top: 12px;
+    text-align: left;
+    padding: 0 6px;
+  }
+  .pantun div { margin-bottom: 3px; }
+
+  .btn-balas {
+    display: none;
+    margin: 22px auto 0;
+    padding: 13px 36px;
+    background: white;
+    color: #e91e63;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transition: all 0.25s ease;
+    position: relative;
+    z-index: 20;
+  }
+  .btn-balas:active {
+    transform: scale(0.95);
+  }
+  .btn-balas.sent {
+    background: #fff0f5;
+    color: #c2185b;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+  <!-- ========================================= -->
+  <!-- TAG VIDEO BACKGROUND DENGAN LINK KAMU     -->
+  <!-- ========================================= -->
+  <video class="bg-video" autoplay loop muted playsinline>
+    <source src="https://ganga--link--ghhzdp9sv8hk.code.run/i/eophenrv3m.mp4" type="video/mp4">
+    Browser kamu tidak mendukung tag video.
+  </video>
+  
+  <!-- Overlay gelap transparan di atas video -->
+  <div class="bg-overlay"></div>
+
+  <!-- Efek gelembung -->
+  <div class="bubbles" id="bubbles"></div>
+
+  <!-- PIN SCREEN -->
+  <div class="card" id="pinScreen">
+    <h2>Tebak PIN-nya di Sini 😊</h2>
+    <div class="sub">Masukkan 4 angka yang tepat!</div>
+    
+    <div class="dots" id="dots">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+    
+    <div class="msg" id="pinMsg"></div>
+    
+    <div class="keypad">
+      <button class="key" data-num="1">1</button>
+      <button class="key" data-num="2">2</button>
+      <button class="key" data-num="3">3</button>
+      <button class="key" data-num="4">4</button>
+      <button class="key" data-num="5">5</button>
+      <button class="key" data-num="6">6</button>
+      <button class="key" data-num="7">7</button>
+      <button class="key" data-num="8">8</button>
+      <button class="key" data-num="9">9</button>
+      <button class="key zero" data-num="0">0</button>
+      <button class="key del" id="delBtn">⌫</button>
+    </div>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div class="card" id="chatScreen">
+    <div class="envelope">💌</div>
+    <div class="avatar-wrap">
+      <svg viewBox="0 0 100 100" width="70" height="70">
+        <circle cx="50" cy="50" r="42" fill="#fff"/>
+        <ellipse cx="32" cy="38" rx="11" ry="14" fill="#222"/>
+        <ellipse cx="68" cy="38" rx="11" ry="14" fill="#222"/>
+        <circle cx="38" cy="52" r="5" fill="#222"/>
+        <circle cx="62" cy="52" r="5" fill="#222"/>
+        <ellipse cx="50" cy="62" rx="7" ry="5" fill="#222"/>
+        <path d="M42 70 Q50 78 58 70" stroke="#222" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M72 55 Q85 45 82 65 Q78 75 70 68" fill="#FFE066" stroke="#E6B800" stroke-width="1.5"/>
+      </svg>
+    </div>
+
+    <div id="chatContent"></div>
+
+    <button class="btn-coba" id="btnCoba">COBA PENCET</button>
+    <button class="btn-balas" id="btnBalas">💌 Balas</button>
+  </div>
+
+  <!-- Love Overlay -->
+  <div id="loveOverlay">
+    <div class="hearts" id="hearts"></div>
+    <div class="love-text">I Love U So Much</div>
+  </div>
+
+<script>
+  function createBubbles() {
+    const container = document.getElementById('bubbles');
+    const sizes = [30, 40, 50, 60, 70, 85, 100];
+    for (let i = 0; i < 14; i++) {
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      const size = sizes[Math.floor(Math.random() * sizes.length)];
+      bubble.style.width = size + 'px';
+      bubble.style.height = size + 'px';
+      bubble.style.left = Math.random() * 100 + '%';
+      bubble.style.animationDuration = (9 + Math.random() * 11) + 's';
+      bubble.style.animationDelay = (Math.random() * 9) + 's';
+      container.appendChild(bubble);
+    }
+  }
+  createBubbles();
+
+  const correctPin = "0123";
+  let currentPin = "";
+  const dots = document.querySelectorAll(".dot");
+  const pinMsg = document.getElementById("pinMsg");
+  const pinScreen = document.getElementById("pinScreen");
+  const chatScreen = document.getElementById("chatScreen");
+  const chatContent = document.getElementById("chatContent");
+
+  document.querySelectorAll(".key[data-num]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (currentPin.length >= 4) return;
+      currentPin += btn.dataset.num;
+      updateDots();
+      if (currentPin.length === 4) checkPin();
+    });
+  });
+
+  document.getElementById("delBtn").addEventListener("click", () => {
+    currentPin = currentPin.slice(0, -1);
+    updateDots();
+    pinMsg.innerHTML = "";
+  });
+
+  function updateDots() {
+    dots.forEach((d, i) => d.classList.toggle("filled", i < currentPin.length));
+  }
+
+  function checkPin() {
+    if (currentPin === correctPin) {
+      pinMsg.innerHTML = `<span class="success">Okee! PIN-nya benerr! 😊</span>`;
+      setTimeout(() => {
+        pinScreen.style.display = "none";
+        chatScreen.style.display = "block";
+        startChat();
+      }, 1200);
+    } else {
+      pinMsg.innerHTML = `<span class="error">PIN-nya salah! 😊<br>Clue: 0123</span>`;
+      setTimeout(() => {
+        currentPin = "";
+        updateDots();
+      }, 1000);
+    }
+  }
+
+  async function startChat() {
+    await typeText("Kamu Tau Ngga? 😊", 0);
+    await wait(1100);
+    
+    await typeText("Ada 5 Cara Untuk<br>Menjadi Cantik 😅", 1);
+    await wait(900);
+
+    const cd = document.createElement("div");
+    cd.className = "countdown";
+    cd.innerHTML = `⏰ <span id="cdNum">3</span>`;
+    chatContent.appendChild(cd);
+    
+    for (let i = 3; i >= 0; i--) {
+      document.getElementById("cdNum").textContent = i;
+      await wait(1300);
+    }
+    cd.remove();
+    chatContent.innerHTML = "";
+    
+    await typeText("Loh.. Kok Ditungguin?! 😝", 0);
+    await wait(1200);
+    await typeText("Kan kamu udah cantik 😁", 1);
+    await wait(1100);
+    await typeText("Cantik banget malah 😁💗", 2);
+    await wait(1000);
+
+    document.getElementById("btnCoba").style.display = "block";
+  }
+
+  function typeText(html, delayIndex) {
+    return new Promise(resolve => {
+      const div = document.createElement("div");
+      div.className = "chat-text";
+      if (delayIndex === 0) div.classList.add("big");
+      div.innerHTML = html;
+      chatContent.appendChild(div);
+      setTimeout(resolve, 600 + delayIndex * 200);
+    });
+  }
+
+  function wait(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  document.getElementById("btnCoba").addEventListener("click", async () => {
+    document.getElementById("btnCoba").style.display = "none";
+    
+    const overlay = document.getElementById("loveOverlay");
+    overlay.style.display = "flex";
+    
+    for (let i = 0; i < 40; i++) {
+      setTimeout(() => spawnHeart(), i * 140);
+    }
+
+    await wait(4200);
+    overlay.style.display = "none";
+
+    await typeText("Aku ada pantun nih 😁", 0);
+    await wait(1000);
+
+    const pantun = document.createElement("div");
+    pantun.className = "pantun";
+    pantun.innerHTML = `
+      <div>Jalan jalan ke Jakarta,</div>
+      <div>Pulangnya ke Polandia,</div>
+      <div>Aku kira kamu manusia,</div>
+      <div>Ternyata Bidadari Surga 💗</div>
+      <div style="margin-top:10px;font-size:1.15rem">💃😚😚💌💗</div>
+    `;
+    chatContent.appendChild(pantun);
+
+    await wait(1400);
+    document.getElementById("btnBalas").style.display = "block";
+  });
+
+  function spawnHeart() {
+    const h = document.createElement("div");
+    h.className = "heart";
+    h.textContent = ["💗","❤️","💖","🌹","✨"][Math.floor(Math.random()*5)];
+    h.style.left = Math.random() * 100 + "%";
+    h.style.fontSize = (16 + Math.random() * 18) + "px";
+    document.getElementById("hearts").appendChild(h);
+    setTimeout(() => h.remove(), 4800);
+  }
+
+  document.getElementById("btnBalas").addEventListener("click", function() {
+    const btn = this;
+    btn.textContent = "Terkirim 💗";
+    btn.classList.add("sent");
+    
+    const info = document.createElement("div");
+    info.style.cssText = "margin-top:12px;font-size:0.9rem;opacity:0.95;";
+    info.innerHTML = "💕<br>Kirim Balasan Ke Orang Yang Mengirim Nya\~";
+    btn.parentNode.appendChild(info);
+  });
+</script>
+</body>
+</html>
